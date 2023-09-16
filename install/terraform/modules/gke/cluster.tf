@@ -39,7 +39,7 @@ locals {
   workloadIdentity              = lookup(var.cluster, "workloadIdentity", false)
   minNodeCount                  = lookup(var.cluster, "minNodeCount", "1")
   maxNodeCount                  = lookup(var.cluster, "maxNodeCount", "5")
-  loggingEnabledComponents      = compact(split(lookup(var.cluster, "loggingEnabledComponents", ""), ","))
+  loggingEnabledComponents      = compact(split(lookup(var.cluster, "loggingEnabledComponents", "SYSTEM_COMPONENTS"), ","))
   maintenanceExclusionStartTime = lookup(var.cluster, "maintenanceExclusionStartTime", timestamp())
   maintenanceExclusionEndTime   = lookup(var.cluster, "maintenanceExclusionEndTime", timeadd(timestamp(), "4080h"))
   # 170 days
@@ -57,7 +57,7 @@ data "google_container_engine_versions" "version" {
 resource "null_resource" "test-setting-variables" {
   provisioner "local-exec" {
     command = <<EOT
-    ${format("echo Current variables set as following - name: %s, project: %s, machineType: %s, initialNodeCount: %s, network: %s, zone: %s, location: %s, windowsInitialNodeCount: %s, windowsMachineType: %s, releaseChannel: %s, kubernetesVersion: %s",
+    ${format("echo Current variables set as following - name: %s, project: %s, machineType: %s, initialNodeCount: %s, network: %s, zone: %s, location: %s, windowsInitialNodeCount: %s, windowsMachineType: %s, releaseChannel: %s, kubernetesVersion: %s, loggingEnabledComponents: %#v",
     local.name,
     local.project,
     local.machineType,
@@ -69,6 +69,7 @@ resource "null_resource" "test-setting-variables" {
     local.windowsMachineType,
     local.releaseChannel,
     local.kubernetesVersion,
+    local.loggingEnabledComponents
 )}
     EOT
 }
