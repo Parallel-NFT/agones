@@ -87,7 +87,10 @@ resource "google_container_cluster" "primary" {
 
   min_master_version = local.kubernetesVersion
 
-  logging_enabled_components = local.loggingEnabledComponents
+  logging_config {
+    enable_components = local.loggingEnabledComponents
+  }
+
   dynamic "maintenance_policy" {
     for_each = local.releaseChannel != "UNSPECIFIED" ? [1] : []
     content {
