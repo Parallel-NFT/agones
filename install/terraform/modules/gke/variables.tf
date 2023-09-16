@@ -33,6 +33,7 @@ variable "cluster" {
     "windowsMachineType"      = "e2-standard-4"
     "autoscale"               = false
     "workloadIdentity"        = false
+    loggingEnabledComponents  = []
     "minNodeCount"            = "1"
     "maxNodeCount"            = "5"
   }
