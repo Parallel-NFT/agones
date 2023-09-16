@@ -39,7 +39,7 @@ locals {
   workloadIdentity              = lookup(var.cluster, "workloadIdentity", false)
   minNodeCount                  = lookup(var.cluster, "minNodeCount", "1")
   maxNodeCount                  = lookup(var.cluster, "maxNodeCount", "5")
-  loggingEnabledComponents      = lookup(var.cluster, "loggingEnabledComponents", [])
+  loggingEnabledComponents      = split(lookup(var.cluster, "loggingEnabledComponents", ""), ",")
   maintenanceExclusionStartTime = lookup(var.cluster, "maintenanceExclusionStartTime", timestamp())
   maintenanceExclusionEndTime   = lookup(var.cluster, "maintenanceExclusionEndTime", timeadd(timestamp(), "4080h"))
   # 170 days
