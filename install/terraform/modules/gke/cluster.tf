@@ -39,6 +39,7 @@ locals {
   workloadIdentity              = lookup(var.cluster, "workloadIdentity", false)
   minNodeCount                  = lookup(var.cluster, "minNodeCount", "1")
   maxNodeCount                  = lookup(var.cluster, "maxNodeCount", "5")
+  logging_enabled_components    = lookup(var.cluster, "logging_enabled_components", ["SYSTEM_COMPONENTS", "WORKLOADS"])
   maintenanceExclusionStartTime = lookup(var.cluster, "maintenanceExclusionStartTime", timestamp())
   maintenanceExclusionEndTime   = lookup(var.cluster, "maintenanceExclusionEndTime", timeadd(timestamp(), "4080h"))
   # 170 days
@@ -86,6 +87,7 @@ resource "google_container_cluster" "primary" {
 
   min_master_version = local.kubernetesVersion
 
+  logging_enabled_components = local.logging_enabled_components
   dynamic "maintenance_policy" {
     for_each = local.releaseChannel != "UNSPECIFIED" ? [1] : []
     content {
