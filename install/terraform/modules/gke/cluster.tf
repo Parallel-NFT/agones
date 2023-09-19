@@ -27,6 +27,7 @@ locals {
   zone                          = lookup(var.cluster, "zone", "")
   name                          = lookup(var.cluster, "name", "test-cluster")
   machineType                   = lookup(var.cluster, "machineType", "e2-standard-4")
+  controllerMachineType         = lookup(var.cluster, "machineType", "e2-standard-4")
   initialNodeCount              = lookup(var.cluster, "initialNodeCount", "4")
   enableImageStreaming          = lookup(var.cluster, "enableImageStreaming", true)
   network                       = lookup(var.cluster, "network", "default")
@@ -156,7 +157,7 @@ resource "google_container_cluster" "primary" {
     }
 
     node_config {
-      machine_type = "e2-standard-4"
+      machine_type = local.controllerMachineType
 
       oauth_scopes = [
         "https://www.googleapis.com/auth/devstorage.read_only",
