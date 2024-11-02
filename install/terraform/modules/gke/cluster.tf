@@ -36,9 +36,13 @@ locals {
   windowsInitialNodeCount       = lookup(var.cluster, "windowsInitialNodeCount", "0")
   windowsMachineType            = lookup(var.cluster, "windowsMachineType", "e2-standard-4")
   autoscale                     = lookup(var.cluster, "autoscale", false)
+  useSecondaryRegion            = lookup(var.cluster, "useSecondaryRegion", false)
+  secondaryRegion               = lookup(var.cluster, "secondaryRegion", "asia-northeast1-a")
+  secondaryRegionTaint          = lookup(var.cluster, "secondaryRegionTaint", "secondary")
   workloadIdentity              = lookup(var.cluster, "workloadIdentity", false)
   minNodeCount                  = lookup(var.cluster, "minNodeCount", "1")
   maxNodeCount                  = lookup(var.cluster, "maxNodeCount", "5")
+  loggingComponentsEnabled      = compact(split(",", lookup(var.cluster, "loggingEnabledComponents", "SYSTEM_COMPONENTS")))
   maintenanceExclusionStartTime = lookup(var.cluster, "maintenanceExclusionStartTime", null)
   maintenanceExclusionEndTime   = lookup(var.cluster, "maintenanceExclusionEndTime", null)
 }
@@ -79,6 +83,7 @@ resource "google_container_cluster" "primary" {
   network    = local.network
   subnetwork = local.subnetwork
 
+
   networking_mode = "VPC_NATIVE"
   ip_allocation_policy {}
 
@@ -88,6 +93,10 @@ resource "google_container_cluster" "primary" {
 
   release_channel {
     channel = local.releaseChannel
+  }
+
+  logging_config {
+    enable_components = local.loggingComponentsEnabled
   }
 
   min_master_version = local.kubernetesVersion
@@ -152,6 +161,10 @@ resource "google_container_node_pool" "default" {
   node_config {
     machine_type = local.machineType
 
+    metadata = {
+       "gce_metadata_server_access" = "enabled"
+    }
+
     oauth_scopes = [
       "https://www.googleapis.com/auth/devstorage.read_only",
       "https://www.googleapis.com/auth/logging.write",
@@ -165,6 +178,59 @@ resource "google_container_node_pool" "default" {
 
     gcfs_config {
       enabled = local.enableImageStreaming
+    }
+  }
+}
+
+# Create a secondary nodepool for the GKE cluster in a different region
+resource "google_container_node_pool" "secondary" {
+  count      = local.useSecondaryRegion ? 1 : 0
+  name       = "secondary"
+  cluster    = google_container_cluster.primary.id
+  node_count = local.autoscale ? null : local.initialNodeCount
+  version    = local.releaseChannel == "UNSPECIFIED" ? data.google_container_engine_versions.version.latest_node_version : data.google_container_engine_versions.version.release_channel_latest_version[local.releaseChannel]
+
+  # Specify a different region or zone for the new node pool
+  location   = local.secondaryRegion
+
+  dynamic "autoscaling" {
+    for_each = local.autoscale ? [1] : []
+    content {
+      min_node_count = local.minNodeCount
+      max_node_count = local.maxNodeCount
+    }
+  }
+
+  management {
+    auto_upgrade = local.releaseChannel == "UNSPECIFIED" ? false : true
+  }
+
+  node_config {
+    machine_type = local.machineType
+
+    metadata = {
+       "gce_metadata_server_access" = "enabled"
+    }
+
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+      "https://www.googleapis.com/auth/service.management.readonly",
+      "https://www.googleapis.com/auth/servicecontrol",
+      "https://www.googleapis.com/auth/trace.append",
+    ]
+
+    tags = ["game-server"]
+
+    gcfs_config {
+      enabled = local.enableImageStreaming
+    }
+
+    taint {
+      key    = "agones-pool"
+      value  = local.secondaryRegionTaint
+      effect = "NoSchedule"
     }
   }
 }
