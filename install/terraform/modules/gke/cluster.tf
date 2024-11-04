@@ -230,7 +230,7 @@ resource "google_container_node_pool" "secondary" {
     taint {
       key    = "agones-pool"
       value  = local.secondaryRegionTaint
-      effect = "NoSchedule"
+      effect = "NO_SCHEDULE"
     }
   }
 }
