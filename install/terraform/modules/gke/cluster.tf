@@ -80,7 +80,6 @@ resource "google_container_cluster" "primary" {
   network    = local.network
   subnetwork = local.subnetwork
 
-
   networking_mode = "VPC_NATIVE"
   ip_allocation_policy {}
 
@@ -92,12 +91,22 @@ resource "google_container_cluster" "primary" {
     channel = local.releaseChannel
   }
 
+  workload_identity_config {
+    workload_pool = "${local.project}.svc.id.goog"
+  }
+
   logging_config {
     enable_components = local.loggingComponentsEnabled
   }
 
   min_master_version = local.kubernetesVersion
 
+  node_config {
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
+  }
+  
   dynamic "maintenance_policy" {
     for_each = (local.releaseChannel != "UNSPECIFIED" && local.maintenanceExclusionStartTime != null && local.maintenanceExclusionEndTime != null) ? [1] : []
     content {
