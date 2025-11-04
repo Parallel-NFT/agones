@@ -91,10 +91,6 @@ resource "google_container_cluster" "primary" {
     channel = local.releaseChannel
   }
 
-  workload_identity_config {
-    workload_pool = "${local.project}.svc.id.goog"
-  }
-
   logging_config {
     enable_components = local.loggingComponentsEnabled
   }
